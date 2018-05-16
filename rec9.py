@@ -3,7 +3,6 @@ import multiprocessing
 import os
 import warnings
 
-# from joblib import Parallel, delayed
 THREAD_NUM = 16
 # all out of class method for pairwise auc, because multiprocessing bug does not support classmethod
 def heaviside(x):
@@ -11,33 +10,6 @@ def heaviside(x):
     if x > 0:
         ret = 1
     return ret
-
-
-def user_auc(x):
-    rating_all, pred, recomendataion_items = x
-    rated = recomendataion_items
-    not_rated = (1-rating_all).nonzero()[0]
-    auc_u = 0
-    for i in rated:
-        for j in not_rated:
-            auc_u += heaviside(pred[i] - pred[j])
-    return auc_u*1.0/(len(rated) * len(not_rated))
-
-def pairwise_auc_multiprocessing(all_rating,test,targets,pred, recommendation,rec_len):
-    rating_all = (((all_rating >0).astype(int)  + (test > 0).astype(int)) > 0).astype(int)
-    user_profile = []
-    # auc_of_targets_ = []
-    for u in targets:
-        # auc_of_targets_.append(user_auc(rating_all[u], pred[u],test[u].nonzero()[0]))
-        user_profile.append((rating_all[u], pred[u],test[u].nonzero()[0]))
-    p = multiprocessing.Pool(THREAD_NUM)
-    auc_of_targets_ = p.map(user_auc,user_profile)
-    p.close()
-    # auc_of_targets_ = []
-    # for p in user_profile:
-    #     auc = user_auc(p)
-    #     auc_of_targets_.append(auc)
-    return (auc_of_targets_)
 
 def precision_recall_ap_hr_f1(x):
     uid, rec_list, true_list, rec_len = x
@@ -120,10 +92,6 @@ class Rec():
             self.recommendation_[user] = list(( disorder_idx[tmp] ))
         return self
 
-    # def evaluate(self, test, targets, rec_len):
-    #     return self.precision_recall(test, targets, rec_len)
-
-
     def precision_recall_hr(self, test, targets, rec_len):
         '''
                 :param test: user*item
@@ -155,11 +123,6 @@ class Rec():
         self.hr_ = hit / len(targets)
         return self.precision_, self.recall_, self.hr_
 
-    def pairwise_auc(self,test,targets):
-        all_rating = (((self.known_ratings > 0).astype(int) + (test > 0).astype(int))>0).astype(int)
-        self.auc_of_targets_ = pairwise_auc_multiprocessing(all_rating, test, targets,self.raw_prediction_matrix, self.recommendation_,rec_len=5)
-        return np.mean(self.auc_of_targets_)
-
     def evaluate2(self,train,test,targets,pred,rec_len_list):
         self.set_prediction_matrix(train, pred)
         self.produce_rec_list( targets)
@@ -179,25 +142,9 @@ class Rec():
                 self.scores[key] = perf[i]
         for name,perf in zip(['prec','reca','MAP','HR',"F1"],[mean_precision, mean_recall, mean_ap, mean_hr,mean_f1_score]):
             extract_score(name,perf)
-        if "AUC" not in self.scores.keys():
-            self.scores['AUC'] = self.pairwise_auc(test, targets)
         self.user_perf_name_ = ["precision","recall","ap", "hit",'F1']
         return self.scores
-        #
-        # for rec_len in rec_len_list:
-        #     if rec_len == 5:
-        #         pr = self.precision_recall_hr(test,targets,rec_len=5)
-        #         self.scores['prec@5'] = pr[0]
-        #         self.scores['reca@5'] = pr[1]
-        #         self.scores['hr@5'] = pr[2]
-        #     elif rec_len == 1:
-        #         pr = self.precision_recall_hr(test,targets,rec_len=1)
-        #         self.scores['prec@1'] = pr[0]
-        #         self.scores['reca@1'] = pr[1]
-        #         self.scores['hr@1'] = pr[2]
-        #     else:
-        #         print("only rec_len = 5 or rec_len = 1")
-        # return self.scores
+
     
     
     
@@ -207,21 +154,6 @@ class Rec():
 
 
 from sklearn.metrics.pairwise import pairwise_distances
-# from numba import jit
-# @jit
-# def _asymcos(x,alpha=0.2):
-#     numerator = x.dot(x.T)
-#     dominator_a = np.power(numerator, alpha)
-#     dominator_b = np.power(numerator, (1 - alpha))
-#     sim = np.zeros_like(numerator).astype(np.float64)
-#     for i in range(numerator.shape[0]):
-#         for j in range(numerator.shape[0]):
-#             if dominator_a[i, i] ==0 or dominator_b[j, j] == 0:
-#                 sim[i,j] = 0
-#             else:
-#                 sim[i, j] = numerator[i, j] / dominator_a[i, i] / dominator_b[j, j]
-#     return sim
-
 def asymcos(x,y,alpha=0.2):
     xy = np.dot(x,y)
     if xy == 0:
@@ -230,10 +162,6 @@ def asymcos(x,y,alpha=0.2):
         xx = x.dot(x)
         yy = y.dot(y)
         sim = xy*1.0 / np.power(xx,alpha) / np.power(yy,(1-alpha))
-            # print ("warning")
-            # print('xx',xx)
-            # print('yy',yy)
-            # print('-'*80)
 
         return sim
 from sklearn import metrics
@@ -335,8 +263,6 @@ class IBCF():
         elif self.sim == 'asymcos':
             self.similarities_ = self.asymmetric_cosine(self.profile,alpha=0.2)
         else:
-            # import pdb; pdb.set_trace()
-            # print("in rec9 cosine, thread num",THREAD_NUM)
             self.similarities_ = 1.0 - pairwise_distances(self.profile, metric=self.sim, n_jobs= THREAD_NUM)
         # set similarity to identity to 0
         self.similarities_ = np.multiply(   self.similarities_, (1-np.eye(self.similarities_.shape[0])))
@@ -361,16 +287,6 @@ class IBCF():
         self.comsumed_num_ = {}
         self.candinates_num_ = {}
 
-        # self.predicted_score_ = compute_all_score_multiprocessing(self.input_ratings, self.item_neighbors_, self.similarities_,self.targets)
-        # self.predicted_score_ = np.zeros(self.train_ratings.shape)
-        # for u in targets:
-        #     consumed = set(self.input_ratings[u, :].nonzero()[0])
-        #     # self.comsumed_num_[u] = set()
-        #     # import pdb; pdb.set_trace()
-        #     candinates = list(set([i for k in consumed for i in self.item_neighbors_[k] ]) - (consumed))
-        #     # for i in xrange(self.item_num_):
-        #     for i in candinates:
-        #         self.predicted_score_[u, i] = self.score_pair_ib(user_id=u, item_id=i)
         self.predicted_score_ = score_mp(targets,input_ratings,self.item_neighbors_, self.similarities_)
         return self
 
@@ -431,93 +347,3 @@ class IBCF():
         self.perf_ =  self.rec.evaluate2(train,test,targets,self.predicted_score_,rec_len_list=rec_len_list)
         return self.perf_
 
-
-
-
-class UBCF():
-    def __init__(self, sim):
-        self.sim = sim
-
-
-    def asymmetric_cosine(self, x, alpha=0.2):
-        '''
-        :param x:
-        :return:
-        '''
-        return _asymcos(x,alpha=0.2)
-
-    def compute_similarity(self, profile):
-        '''
-
-        :param profile: each row is a profile vector, r*c size
-        :return: similarity matrix, r*r size
-        '''
-        self.user_num_ = profile.shape[0]
-        self.similarities_ = np.zeros((self.user_num_, self.user_num_))
-        if self.sim == 'dot':
-            self.similarities_ = self.profile.dot(self.profile.T)
-        elif self.sim == 'asymcos':
-            self.similarities_ = self.asymmetric_cosine(self.profile,alpha=0.2)
-        else:
-            # import pdb; pdb.set_trace()
-            self.similarities_ = 1.0 - pairwise_distances(self.profile, metric=self.sim, n_jobs= 8)
-        # set similarity to identity to 0
-        self.similarities_ = np.multiply( self.similarities_, (1-np.eye(self.similarities_.shape[0])))
-        return self
-
-
-    def find_neighbors(self):
-        self.user_neighbors_ = dict()
-        for user in range(self.user_num_):
-            self.user_neighbors_[user] = np.argpartition(-1 * self.similarities_[user], self.topN)[:self.topN]
-        return  self
-
-    def score_pair_ub(self, user_id, item_id):
-        neighborhood = self.user_neighbors_[user_id]
-        score = (self.similarities_[user_id,neighborhood]).dot(self.known_ratings[neighborhood, item_id])
-        return  score
-
-    def fit(self,train_ratings, profile):
-        '''
-        :param train_ratings: user*user
-        :param profile: user based, user*dim
-        :return: self
-        '''
-        self.train_ratings = train_ratings
-        self.profile = profile
-
-        self.compute_similarity(profile)
-        return self
-
-    def compute_score(self,input_ratings, topN, targets):
-        self.input_ratings = input_ratings
-        self.topN = topN
-        self.find_neighbors()
-        self.known_ratings = self.train_ratings + self.input_ratings
-        self.comsumed_num_ = {}
-        self.candinates_num_ = {}
-
-        self.predicted_score_ = np.zeros(self.train_ratings.shape)
-        for u in targets:
-            consumed = set(self.input_ratings[u, :].nonzero()[0])
-            neighbors = self.user_neighbors_[u]
-            candinates = list(set(self.train_ratings[neighbors].nonzero()[1]) - consumed)
-            # candinates = range(self.train_ratings.shape[1])
-            for i in candinates:
-                self.predicted_score_[u, i] = self.score_pair_ub(user_id=u, item_id=i)
-        return self
-
-    def produce_reclist(self,targets):
-        # predict score first, ensure self.predicted_score_ exsit
-        if True:
-        # try:
-            self.rec_ = Rec()
-            self.rec_.set_prediction_matrix(self.train_ratings+self.input_ratings,self.predicted_score_)
-            self.rec_.produce_rec_list(self.known_ratings,targets)
-            self.recommendations_ = self.rec_.recommendation_
-            return self
-        # except Exception:
-        #     raise Exception
-    def evaluate(self, test, rec_len):
-        self.test = test
-        return self.rec_.evaluate(test=test, rec_len=rec_len)
