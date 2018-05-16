@@ -10,8 +10,11 @@
 
 ## recommended environment
 python 3.6
+
 scipy 1.0.0
+
 pytorch 0.3.0
+
 
 ## dataset
 * ML1M, movieLens-1m, http://files.grouplens.org/datasets/movielens/ml-1m.zip
