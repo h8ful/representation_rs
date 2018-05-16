@@ -1,15 +1,15 @@
-from scipy import  linalg
-import numpy as np
-import time
-from scipy.io import mmread
-import pandas as pd
 import argparse
-import pickle
-import os
 import importlib.util
-import rec9 as rec
-import data_path
+import os
+import pickle
+import time
 
+import data_path
+import numpy as np
+import pandas as pd
+import rec9 as rec
+from scipy import linalg
+from scipy.io import mmread
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--data', type=str)

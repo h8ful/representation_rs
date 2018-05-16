@@ -1,7 +1,8 @@
-import numpy as np
 import multiprocessing
 import os
 import warnings
+
+import numpy as np
 
 THREAD_NUM = 16
 # all out of class method for pairwise auc, because multiprocessing bug does not support classmethod

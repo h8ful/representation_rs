@@ -1,34 +1,27 @@
 # from __future__ import print_function
 import argparse
+import importlib.util
+import math
+import os
+import pathlib
+import pickle
+import shutil
+import subprocess as sbp
+import time
+from copy import deepcopy
+
+import numpy as np
+import pandas as pd
+import rec9 as rec
+import scipy.io as sio
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-from torch.autograd import Variable
-import  shutil
-import  numpy as np
-
-import pandas as pd
-import os
-from copy import deepcopy
-import math
+from scipy import linalg
 from scipy.io import mmread, mmwrite
-from scipy import  linalg
-import numpy as np
-import time
-from scipy.io import mmread
-import pandas as pd
-import argparse
-import pickle
-import os
-import importlib.util
-
-
-import rec9 as rec
-import pathlib
+from torch.autograd import Variable
 from torch.utils.data import Dataset, DataLoader
-import scipy.io as sio
-import subprocess as sbp
 
 parser = argparse.ArgumentParser(description='PyTorch AE')
 parser.add_argument('--batch-size', type=int, default=128, metavar='N',
