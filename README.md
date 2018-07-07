@@ -1,9 +1,5 @@
 # representation_rs
-~~Code will be released soon...~~
 
-20180413
-
-----
 
 ## code
 * R_IBCF, representation_ibcf.py
@@ -24,4 +20,3 @@ pytorch 0.3.0
 * BX, book crossing, http://www.informatik.uni-freiburg.de/~cziegler/BX/
 * LastFM, http://files.grouplens.org/datasets/hetrec2011/hetrec2011-lastfm-2k.zip
 
-20180516
