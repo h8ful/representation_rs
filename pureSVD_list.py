@@ -21,7 +21,6 @@ args = parser.parse_args()
 
 rec.THREAD_NUM = args.thread_num
 
-
 def svd_on_dim(U,s,Vh, dim,train_data,test_data,targets):
     u2 = U[:, :dim]
     s2 = s[:dim]
