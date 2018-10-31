@@ -24,7 +24,6 @@ parser.add_argument('--model',type=str, required=True)
 parser.add_argument('--pca-dim',type=int)
 parser.add_argument('--norm', action='store_true', default=False,
                     help='if normalize the ')
-
 args = parser.parse_args()
 
 def read_bprmf(model_path):
