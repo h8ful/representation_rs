@@ -23,6 +23,7 @@ from scipy.io import mmread, mmwrite
 from torch.autograd import Variable
 from torch.utils.data import Dataset, DataLoader
 
+
 parser = argparse.ArgumentParser(description='PyTorch AE')
 parser.add_argument('--batch-size', type=int, default=128, metavar='N',
                     help='input batch size for training (default: 64)')
