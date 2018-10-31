@@ -28,6 +28,7 @@ def precision_recall_ap_hr_f1(x):
         ap[i] = np.mean([precision[j] for j in range(1,i+1)])
         f1_score[i] = 2*precision[i]*recall[i]/(precision[i]+recall[i]) if (precision[i]+recall[i]) != 0 else 0
     return uid, precision,recall,ap, hit, f1_score
+
 def precision_recall_ap_hr_mp(targets,rec_lists, test_mat,rec_len):
     params = []
     for u in targets:
